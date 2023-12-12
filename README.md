@@ -1,34 +1,35 @@
 
 # Linemod Custom
 
-自制Linemod数据集的工具，用于位姿估计算法。
+[中文文档](https://www.mahaofei.com/post/82de970.html)
 
-本文过程参考该项目: [https://github.com/F2Wang/ObjectDatasetTools](https://github.com/F2Wang/ObjectDatasetTools)
+A tool for making your own Linemod dataset for pose estimation algorithms.
+
+The process in this document refers to the project: [https://github.com/F2Wang/ObjectDatasetTools](https://github.com/F2Wang/ObjectDatasetTools)
 
 
-### 介绍
+### Intro
 
-这个工具是一个纯python脚本，用来从RGBD相机中创建物体的掩码，边界框标签，3D物体mesh文件。
+This tool is a pure python script that is used to create object masks, bounding box labels, 3D object mesh files from RGBD cameras.
 
-该工具可以为各种深度学习项目准备训练和测试数据，例如6D位姿估计、对象检测、实例分割等等。
+The tool prepares training and testing data for a variety of deep learning projects, such as 6D pose estimation, object detection, instance segmentation, and more.
 
-### 准备工作
+### Preparation
 
-彩色打印arucomarkers文件夹下的aruco markers标记版，ID1-13，一共三页A4纸。
+Color print the aruco markers in the arucomarkers folder, ID1-13, a total of 4 pages of A<> paper.
 
-将标记一个一个剪下来，贴在物体周围。
+Cut out the markers one by one and stick them around the object.
 
 ![](https://img.mahaofei.com/img/20220918100104.png)
 
-
-使用conda新建一个虚拟环境
+Use conda to create a new virtual environment
 
 ```bash
 conda create -n objectdatasettools python=2.7
 conda activate objectdatasettools
 ```
 
-安装依赖
+Install dependencies
 
 ```bash
 sudo apt-get install build-essential cmake git pkg-config libssl-dev libgl1-mesa-glx
@@ -40,60 +41,59 @@ pip install numpy Cython==0.19 pypng==0.0.18 scipy scikit-learn open3d==0.9.0 sc
 
 ```bash
 pip install pyrealsense2
-# 如果过慢，可以使用pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pyrealsense2
 ```
 
-### 录制视频
+### Record a video
 
-**（1）如果有Realsense相机**
+**(1) If there is a Realsense camera**
 
-使用Realsense相机录制一段物体的视频，对于旧模型使用record.py，对librealsense SDK 2.0使用recordf2.py。
+Record a video of an object with the Realsense camera, `record.py` for older models, `recordf2.py` for librealsense SDK 0.2.
 
 ```python
 python record2.py LINEMOD/OBJECTNAME
 ```
 
-默认情况下，脚本在倒计时5后录制40秒，录制时间长度可以在record.py中的第20行进行修改。可以通过按“q”退出录制。
+By default, the script is recorded after 5 countdowns to 40 seconds, and the recording duration can be modified on line 20 in the record.py. You can exit the recording by pressing "Q".
 
-请稳定移动相机以获得物体的不同视图，同时始终保持 2-3 个标记在相机的视野范围内。
+Please move the camera steadily to get a different view of the object while always keeping 2-3 markers within the camera's field of view.
 
-请注意，该项目假设所有序列都保存在名为“LINEMOD”的文件夹下，使用其他文件夹名称会导致错误发生。
+Note that this project assumes that all sequences are saved under a folder named "LINEMOD", using a different folder name will cause the error to occur.
 
-如果使用record.py创建序列，彩色图像、深度图以及相机参数会自动保存在序列目录下。
+If you create a sequence using record.py, the color image, depth map, and camera parameters are automatically saved in the sequence directory.
 
 ![](https://img.mahaofei.com/img/20220918154609.png)
 
-**（2）如果有现有的图像**
+**(2) If there is existing images**
 
-如果已有彩色图像或者深度图像，则应将彩色图像（.jpg）放在名为“JPEGImages”的文件夹中，并将对其的深度图像放在“depth”文件夹中。
+If you already have a color image or a depth image, you should place the color image (.jpg) in a folder named "JPEGImages" and the depth image of it in the "depth" folder.
 
-注意：该算法假定深度图与彩图对齐。将彩图按顺序从0.jpg、1.jpg、…、600.jpg和相应的深度图命名为：0.png,…,600.png，同时应在序列目录下创建一个名为“intrinsics.json”的文件，并按照如下形式手动输入相机参数
+Note: The algorithm assumes that the depth map is aligned with the color map. Name the color map from 0.jpg, 1.jpg、...、600.jpg and the corresponding depth map to 0.png,...,600.png at the same time, create a file named `intrinsics.json` in the sequence directory, and manually enter the camera parameters as follows
 
 ```json
 {"fx": 614.4744262695312, "fy": 614.4745483398438, "height": 480, "width": 640, "ppy": 233.29214477539062, "ppx": 308.8282470703125, "ID": "620201000292"}
 ```
 
-### 获取帧之间的变换
+### Gets transformations between frames
 
-计算第一帧的变换，以制定的间隔（可在config/registrationParameters修改间隔），将变换（4x4矩阵）保存为numpy数组。计算结果保存在`LINEMOD/OBJECTNAME/transforms.npy`
+Calculate the transformation of the first frame to the specified interval (the interval can be modified in config/registrationParameters), save the transformation (4x4 matrix) as a numpy array. The results of the calculations are saved in `LINEMOD/OBJECTNAME/transforms.npy`
 
 ```python
 python compute_gt_poses.py LINEMOD/OBJECTNAME
 ```
 
-或
+or
 
 ```python
 python compute_gt_poses.py all
 ```
 
-### 目标物体三维重建
+### 3D reconstruction of the target object
 
 ```python
 python register_scene.py LINEMOD/OBJECTNAME
 ```
 
-上面代码会原始的registeredScene.ply将保存在指定的目录下（例如，LINEMOD/OBJECTNAME/registeredScene.ply）。registerScene.ply是整个场景的点云，包括桌面、标记纸，物体等等相机中的对象。
+The above code will save the original registeredScene.ply in the specified directory (e.g., LINEMOD/OBJECTNAME/registeredScene.ply). registerScene.ply is a point cloud of the entire scene, including desktops, marker paper, objects, and other objects in the camera.
 
 ![](https://img.mahaofei.com/img/20220918154806.png)
 
@@ -102,96 +102,94 @@ python register_scene.py LINEMOD/OBJECTNAME
 python register_segmented.py LINEMOD/OBJECTNAME
 ```
 
-使用上面的代码可跳过手动工作，来删除不需要的背景，并实现物体的三维重建
+Use the code above to skip the manual work, remove unwanted backgrounds, and reconstruct objects in 3D
 
-register_segmented.py会将物体点云转换为mesh网络。FILLBOTTOM设置为true，算法会自动使用平坦表面填充物体底部。
+register_segmented.py converts the object point cloud into a mesh network. FILLBOTTOM is set to true, and the algorithm automatically fills the bottom of the object with a flat surface.
 
-但是register_segmented.py可能会失败，这时候需要调整一些参数来使算法可以正常运行。最重要的参数是MAX_RADIUS，如果物体较大，需要增加此值以保证对象不会被截断。
+However, register_segmented.py may fail, and some parameters need to be adjusted to make the algorithm work. The most important parameter is MAX_RADIUS, and if the object is large, this value needs to be increased to ensure that the object is not truncated.
 
-**调整MAX_RADIUS参数，使模型尽可能精准。生成后使用MeshLAB手动删除孤立的点和区域，然后手动保存一次。**
+**Adjust MAX_RADIUS parameters to make the model as accurate as possible. Use MeshLAB to manually delete orphaned points and areas after generation and then manually save them once.**
 
-# 手动处理点云
+### Manually process point clouds
 
-如果上面的register_segmented.py处理结果比较满意，可以跳过该步骤。
+If you are satisfied with the results of the `register_segmented.py` above, you can skip this step.
 
-将生成的点云数据registeredScene.ply使用meshlab打开：
+RegisteredScene.ply opens the generated point cloud data using meshlab:
 
-1. 删除背景
-2. 进行表面重建补全缺失的底部
-3. 处理重建后的网络
-4. 确保处理后的网格没有孤立地噪声
+1. Remove the background
+2. Perform a surface reconstruction to complete the missing bottom
+3. Handle the rebuilt network
+4. Make sure that the processed mesh is free of isolated noise
 
-最终生成mesh网格文件。
+The final mesh file is generated.
 
-### 生成图像掩码和标签文件
+### Generate image masks and label files
 
-当完成了物体mesh网格文件的生成后，使用以下程序创建图像掩码和标签
+When you have finished generating the mesh file of the object, use the following procedure to create image masks and labels
 
 ```python
 python create_label_files.py all
 ```
 
-或
+or
 
 ```python
 python create_label_files.py LINEMOD/OBJECTNAME
 ```
 
-这一步骤会生成一个名为OBJECTNAME.ply的文件，用meshlab打开此文件，另存为mesh并取消勾选binary，保存的文件就是数据集的**模型文件**。其AABB以原点为圆心，并与OBB的尺寸相同，同时在mask文件夹下会生成图像的掩码，transforms文件夹下会保存新mesh的变换矩阵，labels文件夹内保存标签文件。
+This step will generate a file named `OBJECTNAME.ply`, open it with meshlab, save it as mesh and uncheck binary, and save the file as the **model file** of the dataset. The AABB is centered on the origin and has the same size as the OBB, and at the same time, the mask folder will generate the mask of the image, the transform matrix of the new mesh will be saved in the transforms folder, and the label file will be saved in the labels folder.
 
-同时将打印出的min_xyz和size_xyz复制到**models_info.yml**文件中。
+Copy the printed min_xyz and size_xyz to the `models_info.yml` file at the same time.
 
-使用下面的命令可以检查创建的边界框和掩码的正确性：
+Use the following command to check the correctness of the bounding box and mask you created:
 
 ```python
 python inspectMasks.py LINEMOD/OBJECTNAME
 ```
 
-### 获得物体比例
+### Obtain the object scale
 
 ```python
 python getmeshscale.py
 ```
 
-将物体直径复制到**models_info.yml**文件中。
+Copy the object diameter into a `models_info.yml` file.
 
-### 创建边界框标签
+### Create a bounding box labels
 
-在获取了物体的mask后，使用下面的代码：
+Once you have the mask of the object, use the following code:
 
 ```python
 python get_BBs.py
 ```
 
-会在根目录创建annotations.csv文件，包含所有图片的物体类别的标签和边界框信息。
+An `annotations.csv` file is created at the root directory that contains labels and bounding box information for the object categories of all images.
 
-### 匹配数据集格式
+### Match the dataset format
 
-下面4个程序是自己写的，主要用来将生成的linemod数据集进行处理，整理成linemod_processed数据集的格式。
+The following 4 programs are written to process the generated linemod dataset and organize it into a format for linemod_processed dataset.
 
-（等有时间了把这几个程序上传上来）
-
-从`annotations.csv`中生成`gt.yml`与`info.yml`。需要修改每个物体对应的`obj_id`。
+Generating `gt.yml` and `info.yml` from `annotations.csv` using the following code. It is necessary to modify the `obj_id` correspondence for each object.
 
 ```python
 python generate_yml.py LINEMOD/timer
 ```
 
-将图片重命名为如`0000.png`格式
+Rename the image to such a format `0000.png`.
 
 ```python
 python rename.py all
 ```
 
-根据每个物体的图片数量划分数据集，生成`train.txt`与`test.txt`
+Divide the dataset according to the number of pictures of each object, generate the `train.txt` and `test.txt`.
 
 ```python
 python data_divide.py all
 ```
 
-（将ply文件中的坐标单位由m转为mm），使用meshlab打开`objectname.ply`文件，删除无效点后保存为`objectname_aligned.ply`，勾选`normal`和`color`，取消勾选`binary encoding`。
+(Change the coordinate unit in the ply file from `m` to `mm`), open the `objectname.ply` file with meshlab, delete the invalid points and save it as `objectname_aligned.ply`, check the `normal` and `color`, and uncheck the `binary encoding`.
 
-然后运行下面的指令，将点云文件的单位由m转换为mm：
+Then run the following command to convert the unit of the point cloud file from m to mm:
 
 ```python
 python plym2mm.py all
