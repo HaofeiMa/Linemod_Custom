@@ -3,7 +3,7 @@
 
 [中文文档](https://www.mahaofei.com/post/82de970.html)
 
-A tool for making your own Linemod dataset for pose estimation algorithms.
+A tool for making your own Linemod dataset for pose estimation algorithms. (The code is not perfect and was written for demo testing, for reference only)
 
 The process in this document refers to the project: [https://github.com/F2Wang/ObjectDatasetTools](https://github.com/F2Wang/ObjectDatasetTools)
 
